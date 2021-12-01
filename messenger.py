@@ -20,7 +20,7 @@ def check_login(conn, login):
     return rows[0][0]
     
 # connection
-conn = mysql.connector.connect(user='appaccount', password='csci2052021', host='AU20012', database='messenger_db')
+conn = mysql.connector.connect(user='appaccount', password='anInsecurePassword', host='', database='echo-app')
 
 # ask the user to enter login
 login = input('Enter your login: ')
