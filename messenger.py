@@ -1,80 +1,61 @@
 import mysql.connector
 import sys
+import os
 
-def check_login(conn, login):
-    ''' Checks if login exists in the DB and returns login_id/-1'''
+conn = mysql.connector.connect(user='appaccount',
+                               password='anInsecurePassword', host='localhost',
+                               database='echo-app')
+
+
+def check_login(login, password):
+    global conn
+    ''' Checks if login exists in the DB and returns login_id/-1/-2'''
     cursor = conn.cursor()
 
     try:
-        cursor.execute(''' select id from accounts where login = %s; ''', (login,))
+        cursor.execute(''' select id, password from accounts where username = %s; ''', (login,))
     except mysql.connector.Error as er:
             print('SQL error: ', er)
-            sys.exit()
+            return -3
 
     rows = cursor.fetchall()
-
+    #login does not exist
     if len(rows) == 0:
-        print('Login does not exist')
         return -1
+    #incorrect password
+    elif rows[0][1] != password:
+        return -2
 
     return rows[0][0]
-    
-# connection
-conn = mysql.connector.connect(user='appaccount', password='anInsecurePassword', host='', database='echo-app')
 
-# ask the user to enter login
-login = input('Enter your login: ')
-login_id = check_login(conn, login)
-if login_id == -1:
-    sys.exit()
 
-while True:
-    print('1: Read\t2: Send\t3:Quit')
-    option = int(input('Select the option: '))
-    if option == 3:
-        sys.exit()
-    elif option == 1:
-        cursor = conn.cursor()
+def create_login(login, password):
+    global conn
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''select id from accounts a where a.username = %s;''', (login,))
+    except mysql.connector.Error as er:
+        print('SQL error: ', er)
+        return
+
+    rows = cursor.fetchall()
+    # login does not exist
+    if len(rows) == 0:
         try:
-            cursor.execute(''' select a2.login, m.message from accounts a1 join messages m on a1.id = m.dst
-                                    join accounts a2 on m.src=a2.id where a1.login = %s order by m.id desc''', (login,))
+            cursor.execute('''select id from accounts;''')
         except mysql.connector.Error as er:
             print('SQL error: ', er)
-            sys.exit()
+            return -3
 
         rows = cursor.fetchall()
-        for row in rows:
-            print(row)
-    elif option == 2:
-        destination = input('Enter destination login: ')
-        destination_id = check_login(conn, destination)
-        if destination_id == -1:
-            print('Receiver does not exist')
-            continue
-        message = input('Enter the message:' )
-        cursor = conn.cursor()
         try:
-            cursor.execute(''' insert into messages (id, src, dst, message) select max(id) + 1, %s,
-                                               %s, %s from messages''', (login_id, destination_id, message))
+            cursor.execute('''insert into accounts (username, password) values (%s, %s)''',
+                           (login, password))
+
         except mysql.connector.Error as er:
             print('SQL error: ', er)
-            sys.exit()
-
+            return -3
         conn.commit()
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-        
-        
-    
+        return 1
+    else:
+        return -1
