@@ -54,7 +54,7 @@ def create_login(login, password):
         return -1
 
 
-def send_dm(sender, password, recipient, message):
+def send_dm(sender, recipient, message):
     '''
 
     :param sender:
@@ -66,21 +66,16 @@ def send_dm(sender, password, recipient, message):
     cursor = conn.cursor()
     #find sender info and confirm details
     try:
-        cursor.execute('''select id, password from accounts where username = %s''',(sender,))
+        cursor.execute('''select id from accounts where username = %s''',(sender,))
     except mysql.connector.Error as er:
         print('SQL error: ', er)
         return -3
     rows = cursor.fetchall()
-
-    # failed sender validation.
-    if len(rows)==0 or rows[0][1] != password:
-        return -2
-
     sender_id = rows[0][0]
 
     #find recipient
     try:
-        cursor.execute('''select id from accounts where username=recipient''', (recipient,))
+        cursor.execute('''select id from accounts where username=%s''', (recipient,))
     except mysql.connector.Error as er:
         print('SQL error: ', er)
         return -3
@@ -92,24 +87,47 @@ def send_dm(sender, password, recipient, message):
     recipient_id = rows[0][0]
 
     #is sender or recipient blocked
-    try:
-        cursor.execute('''select * from blocks where blocks where blocked_by=%d or blocked_by=%d''',
-                       (sender_id,recipient_id))
-    except mysql.connector.Error as er:
-        print('SQL error: ', er)
-        return -3
-
-    if len(rows)!=0:
-        return -4
+    # try:
+    #     cursor.execute('''select * from blocks where blocks where blocked_by=%s or blocked_by=%s''',
+    #                    (sender_id,recipient_id))
+    # except mysql.connector.Error as er:
+    #     print('SQL error: ', er)
+    #     return -3
 
     try:
-        cursor.execute('''insert into direct_messages (sender, recipient, message) values (%d, %d, %s);''',
+        cursor.execute('''insert into direct_messages (sender_id, recipient_id, content) values (%s, %s, %s);''',
                        (sender_id, recipient_id, message))
-        cursor.commit()
-        return 0
     except mysql.connector.Error as er:
         print('SQL error: ', er)
         return -3
+    conn.commit()
+    return 1
+
+
+def get_dms_from(sender, recipient):
+    global conn
+    cursor = conn.cursor()
+
+    messages = []
+
+    try:
+        cursor.execute('''select a1.username as sender, dms.content from direct_messages dms 
+        join accounts a1 on dms.sender_id=a1.id 
+        join accounts a2 on dms.recipient_id=a2.id 
+        where (a1.username=%s and a2.username=%s) 
+        or (a1.username=%s and a2.username=%s) order by dms.id;''',
+                       (sender, recipient, recipient, sender))
+    except mysql.connector.Error as er:
+        print('SQL error: ', er)
+        return []
+    rows = cursor.fetchall()
+
+    for i in range(len(rows)):
+        messages.append(str(rows[i][0]) + ': ' + str(rows[i][1]))
+
+    return messages
+
+
 
 
 def get_messages_in(channel_name):

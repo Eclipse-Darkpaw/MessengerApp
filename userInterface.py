@@ -1,3 +1,4 @@
+import tkinter as tk
 from tkinter import *
 from tkinter import ttk
 import messenger
@@ -109,8 +110,23 @@ def newAcc_screen(error_code=0):
     root.mainloop()
 
 
-def open_chat(recipient_id, error=0):
-    pass
+def open_chat(recipient, error=0):
+    clear_screen(frm)
+
+    def message():
+        msg = text.get()
+        messenger.send_dm(username, recipient, msg)
+        open_chat(recipient)
+
+    ttk.Button(frm, text='Back', command=signedIn_screen).grid(column=0, row=0)
+    text = ttk.Entry(frm,width=50)
+    text.grid(column=1, row=0)
+    ttk.Button(frm, text='Send', command=message).grid(column=2, row=0)
+    ttk.Label(frm,text=recipient).grid(column=3,row=0)
+
+    msg = messenger.get_dms_from(username, recipient)
+    for i in range(len(msg)):
+        ttk.Label(frm, text=msg[i],wraplength=300).grid(column=1, row=i+1, sticky=tk.W)
 
 
 def channel_screen(channel_name, error=0):
@@ -125,11 +141,11 @@ def channel_screen(channel_name, error=0):
     text = ttk.Entry(frm,width=50)
     text.grid(column=1, row=0)
     ttk.Button(frm, text='Send', command=message).grid(column=2, row=0)
+    ttk.Label(frm,text=channel_name).grid(column=3,row=0)
 
     msg = messenger.get_messages_in(channel_name)
     for i in range(len(msg)):
-        ttk.Label(frm, text=msg[i], justify="left").grid(column=1, row=i+1)
-
+        ttk.Label(frm, text=msg[i],wraplength=300).grid(column=1, row=i+1, sticky=tk.W)
 
 
 def signedIn_screen(errorcode=0, suberror=0):
@@ -175,9 +191,12 @@ def signedIn_screen(errorcode=0, suberror=0):
     show_user_channels()
 
     if errorcode == 1:
+        def new_dm():
+            r = user_select.get()
+            open_chat(r)
         user_select = Entry(frm)
         user_select.grid(column=2, row=1)
-        ttk.Button(frm, text='Create').grid(column=3, row=1)
+        ttk.Button(frm, text='Create', command=new_dm).grid(column=3, row=1)
         ttk.Button(frm, text='Cancel', command=cancel).grid(column=0,row=1)
     elif errorcode == 2:
         def join_chan():
