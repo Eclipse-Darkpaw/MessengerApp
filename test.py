@@ -1,22 +1,19 @@
 from tkinter import *
-from tkinter import messagebox
+from tkinter import ttk
 
-ws = Tk()
-ws.title('pythonguides')
-ws.geometry('250x200')
+root = Tk()
+root.title('Unread E-mail')
 
-def usrnm(name):
-    name = name_Tf.get()
-    print(name)
+body = ttk.Frame(root, padding=10)
+body.grid()
 
+buttons = ttk.Frame(root, padding=10)
+buttons.grid()
 
-def getpass(passw):
-    passw = passw_Tf.get()
-    print(passw)
+ttk.Label(body, text='From: Autumn').grid(row=0)
+ttk.Label(body, text="You're cute!").grid(row=1)
+ttk.Button(buttons, text='Remind me later').grid(column=0, row=0)
+ttk.Button(buttons, text='Yes').grid(column=1, row=0)
+ttk.Button(buttons, text='No').grid(column=2,row=0)
 
-Label(ws, text='Enter Name & hit Enter Key').pack(pady=20)
-name_Tf = Entry(ws)
-name_Tf.bind('<Return>', usrnm)
-name_Tf.pack()
-
-ws.mainloop()
+root.mainloop()
